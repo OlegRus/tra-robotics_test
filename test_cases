@@ -1,0 +1,208 @@
+********** POST **********
+
+    Предусловия:
+        выполнить: docker run -d -p 8091:8091 azshoo/alaska:1.0 java -jar alaska1.0.jar
+        все запросы делать на localhost:8091/bear
+
+    Комментарии:
+        В связи с тем, что в тестируемом приложении, данные храняться в HashMap<String, Bear>, 
+        проверка создания, выполняется GET запросом
+
+    Набор данных для проверки успешного создания:
+        Type: POLAR, BROWN, BLACK, GUMMY
+        Name: test, test1, +test, тест
+        Age: 50.0, 0.0, 100.0
+    для генерации тестовых данных, на основе данного набора, использовалась утилита pict
+
+    Тесты:
+1. Создать (positive):
+    Type    Name    Age
+    GUMMY   test1   0.0
+    POLAR   +test   50.0
+    BLACK   +test   0.0
+    BLACK   тест    50.0
+    POLAR   тест    0.0
+    BLACK   test1   100.0
+    BROWN   tEst    50.0
+    POLAR   tEst    100.0
+    GUMMY   +test   100.0
+    BROWN   test1   100.0
+    GUMMY   тест    50.0
+    POLAR   test1   50.0
+    BROWN   тест    100.0
+    GUMMY   tEst    0.0
+    BROWN   +test   0.0
+    BLACK   tEst    100.0
+
+2. Создать (negative):
+    Type    Name    Age
+    UNKNOWN test    50.0
+    test    test    50.0
+            test    50.0 (отсутствует поле bear_type)
+
+    BROWN   ""      50.0 (пустая строка)
+    BROWN           50.0 (отсутствует поле bear_name)
+
+    BROWN   test    -1.0
+    BROWN   test    101.0
+    BROWN   test    0xF
+    BROWN   test    test
+    BROWN   test         (отсутствует поле bear_age)
+                         (тело запроса пустое)
+
+3. Добавить в тело запроса поле "id", создать:
+    Id    Type    Name    Age
+    55    BROWN   test1   50.0
+    test  BROWN   test1   50.0
+
+4. Проверить, что id у созданных медведей не пустые
+5. Проверить, что id у созданных медведей не повторяются
+6. Проверить, что id созданного медведя на 1 больше чем у предыдущего
+7. Проверить, что создается только 1 объект медведя
+8. Проверить код ответа
+9. Проверить тело ответа
+
+
+********** GET **********
+
+    Предусловия:
+        выполнить: docker run -d -p 8091:8091 azshoo/alaska:1.0 java -jar alaska1.0.jar
+        все запросы делать на localhost:8091/bear
+        перед тестом, должны быть созданы:
+        POLAR   Test2   50.0
+        BROWN   tEst+   34.0
+        BLACK   тест    100.0
+        GUMMY   test1   0.0
+
+    Тесты:
+1. Запросить по id:
+    POLAR
+    BROWN
+    BLACK
+    GUMMY
+    UNKNOWN (если есть возможность создать такой тип,
+            на данный момент в коде при создании GUMMY:
+                if (localBear.getType().equals((Object)BearType.GUMMY)) {
+                    localBear.setAge(Double.valueOf(0.0));
+                    localBear.setName("empty_name");
+                    localBear.setType(BearType.UNKNOWN);
+                }
+            )
+2. Получить список всех медведей
+3. Сделать запрос по пустому id
+4. В запросе, вместо id ввести текст
+5. Проверить код ответа
+6. Проверить тело ответа
+
+
+********** PUT **********
+
+    Предусловия:
+        выполнить: docker run -d -p 8091:8091 azshoo/alaska:1.0 java -jar alaska1.0.jar
+        все запросы делать на localhost:8091/bear
+        перед тестом, должны быть созданы:
+        Type    Name         Age
+        POLAR   SuperTest2   22.0
+        BROWN   SupertEst+   22.0
+        BLACK   Superтест    100.0
+        GUMMY   Supertest1   0.0
+
+    Комментарии:
+        В связи с тем, что в тестируемом приложении, данные храняться в HashMap<String, Bear>,
+        проверка внесения изменений, выполняется GET запросом
+
+    Набор данных для проверки успешного изменения:
+        Type: POLAR, BROWN, BLACK, GUMMY
+        Name: test, test1, +test, тест
+        Age: 50.0, 0.0, 100.0
+    для генерации тестовых данных, на основе данного набора, использовалась утилита pict
+
+    Тесты:
+1. Внести изменения в существующие записи (positive):
+    Type    Name    Age
+    GUMMY   test1   0.0
+    POLAR   +test   50.0
+    BLACK   +test   0.0
+    BLACK   тест    50.0
+    POLAR   тест    0.0
+    BLACK   test1   100.0
+    BROWN   tEst    50.0
+    POLAR   tEst    100.0
+    GUMMY   +test   100.0
+    BROWN   test1   100.0
+    GUMMY   тест    50.0
+    POLAR   test1   50.0
+    BROWN   тест    100.0
+    GUMMY   tEst    0.0
+    BROWN   +test   0.0
+    BLACK   tEst    100.0
+
+2. Внести изменения в существующие записи (negative):
+    Type    Name    Age
+    BROWN                (в теле есть только поле bear_type)
+            test         (в теле есть только поле bear_name)
+                    55.0 (в теле есть только поле bear_age)
+
+    UNKNOWN test    50.0
+    test    test    50.0
+            test    50.0 (отсутствует поле bear_type)
+
+    BROWN   ""      50.0 (пустая строка)
+    BROWN           50.0 (отсутствует поле bear_name)
+
+    BROWN   test    -1.0
+    BROWN   test    101.0
+    BROWN   test    0xF
+    BROWN   test    test
+    BROWN   test         (отсутствует поле bear_age)
+                         (тело запроса пустое)
+
+
+3. Внести изменения в существующие записи и в теле запроса добавить поле "id"
+    Id    Type    Name    Age
+    55    BROWN   test1   50.0
+    test  BROWN   test1   50.0
+
+4. Внести изменения по пустому id
+5. Проверить, что внесенные изменения не меняют счетчик id
+6. Проверить, что внесенные изменения сохраняются по указанному id и не создабт новых объектов в базе
+7. В запросе, вместо id ввести текст
+8. Проверить код ответа
+9. Проверить тело ответа
+
+
+********** DELETE **********
+
+    Предусловия:
+        выполнить: docker run -d -p 8091:8091 azshoo/alaska:1.0 java -jar alaska1.0.jar
+        все запросы делать на localhost:8091/bear
+        перед тестом, должны быть созданы:
+        Type    Name         Age
+        POLAR   SuperTest2   22.0
+        BROWN   SupertEst+   22.0
+        BLACK   Superтест    100.0
+        GUMMY   Supertest1   0.0
+
+    Комментарии:
+        В связи с тем, что в тестируемом приложении, данные храняться в HashMap<String, Bear>,
+        проверка внесения изменений, выполняется GET запросом
+
+    Тесты:
+1. Удалить существующего медведя по id
+2. Удалить всех (перед удалением записи в базе есть)
+3. Удалить медвдея по пустому id
+4. Удалить всех (перед удалением записей в базе нет)
+5. Проверит счетчик id после удаления медведя по id (создать медведя и проверить его id)
+6. Проверит счетчик id после удаления всех (создать медведя и проверить его id)
+7. В запросе, вместо id ввести текст
+8. Проверить код ответа
+9. Проверить тело ответа
+
+
+*************** Дополнительные тесты ***************
+
+    Предусловия:
+        выполнить: docker run -d -p 8091:8091 -p 8092:8092 azshoo/alaska:1.0 java -jar alaska1.0.jar
+
+1. Проверить наличие справки по эндпойнту localhost:8091/info
+2. Проверить наличие UUID по запросу на localhost:8092
